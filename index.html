@@ -1,91 +1,112 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Study Tracker — Fixed</title>
-<script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JEE Study Tracker Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-100 min-h-screen p-6">
-<div class="max-w-4xl mx-auto">
-<h1 class="text-3xl font-bold mb-6">Study Tracker</h1>
-
-<div class="bg-white rounded-xl p-5 shadow mb-6">
-<form id="topicForm" class="flex gap-3 flex-col sm:flex-row">
-<input id="topicInput" placeholder="Add topic…" class="flex-1 border rounded-lg p-3"/>
-<input id="hoursInput" type="number" min="0" step="0.5" placeholder="Hours" class="border rounded-lg p-3 w-32"/>
-<button class="bg-emerald-600 text-white px-5 py-3 rounded-lg">Add</button>
-</form>
+<body class="bg-slate-950 text-white min-h-screen">
+  <div class="max-w-5xl mx-auto px-4 py-6">
+    <div class="flex justify-between items-center mb-6">
+      <div>
+        <h1 class="text-3xl font-bold">JEE Study Tracker Pro</h1>
+        <p class="text-slate-400">Daily study, goals, tests, and countdown — all in one place.</p>
+      </div>
+      <div id="countdown" class="text-right text-emerald-400 font-semibold"></div>
+    </div><div class="grid md:grid-cols-4 gap-4 mb-6">
+  <div class="bg-slate-900 rounded-2xl p-4"><p class="text-slate-400">Topics</p><p id="topicsCount" class="text-3xl font-bold">0</p></div>
+  <div class="bg-slate-900 rounded-2xl p-4"><p class="text-slate-400">Hours</p><p id="hoursCount" class="text-3xl font-bold">0</p></div>
+  <div class="bg-slate-900 rounded-2xl p-4"><p class="text-slate-400">Mock Tests</p><p id="testCount" class="text-3xl font-bold">0</p></div>
+  <div class="bg-slate-900 rounded-2xl p-4"><p class="text-slate-400">Average Score</p><p id="avgScore" class="text-3xl font-bold">0%</p></div>
 </div>
 
-<div class="grid grid-cols-2 gap-4 mb-6">
-<div class="bg-white rounded-xl p-5 shadow">
-<p class="text-sm text-slate-500">Topics Completed</p>
-<p id="topicCount" class="text-3xl font-bold">0</p>
-</div>
-<div class="bg-white rounded-xl p-5 shadow">
-<p class="text-sm text-slate-500">Total Hours</p>
-<p id="hourCount" class="text-3xl font-bold">0</p>
-</div>
+<div class="grid md:grid-cols-2 gap-6">
+  <section class="bg-slate-900 rounded-2xl p-5">
+    <h2 class="text-xl font-semibold mb-3">Add Study Session</h2>
+    <form id="studyForm" class="space-y-3">
+      <input id="topic" placeholder="Topic name" class="w-full p-3 rounded-lg bg-slate-800" />
+      <select id="subject" class="w-full p-3 rounded-lg bg-slate-800">
+        <option>Physics</option>
+        <option>Chemistry</option>
+        <option>Maths</option>
+      </select>
+      <input id="hours" type="number" step="0.5" placeholder="Hours studied" class="w-full p-3 rounded-lg bg-slate-800" />
+      <button class="w-full bg-emerald-600 py-3 rounded-lg font-semibold">Add Session</button>
+    </form>
+    <div id="studyList" class="mt-4 space-y-2"></div>
+  </section>
+
+  <section class="bg-slate-900 rounded-2xl p-5">
+    <h2 class="text-xl font-semibold mb-3">Mock Test Scores</h2>
+    <form id="testForm" class="flex gap-2 mb-4">
+      <input id="score" type="number" placeholder="Score %" class="flex-1 p-3 rounded-lg bg-slate-800" />
+      <button class="bg-blue-600 px-4 rounded-lg">Add</button>
+    </form>
+    <div id="testList" class="space-y-2"></div>
+  </section>
 </div>
 
-<div id="topicList" class="space-y-3"></div>
-</div>
-
-<script>
-const form = document.getElementById('topicForm');
-const topicInput = document.getElementById('topicInput');
-const hoursInput = document.getElementById('hoursInput');
-const topicList = document.getElementById('topicList');
-const topicCount = document.getElementById('topicCount');
-const hourCount = document.getElementById('hourCount');
-
-let topics = JSON.parse(localStorage.getItem('study-tracker-data') || '[]');
+  </div><script>
+const studyForm = document.getElementById('studyForm');
+const testForm = document.getElementById('testForm');
+let study = JSON.parse(localStorage.getItem('jee-study')||'[]');
+let tests = JSON.parse(localStorage.getItem('jee-tests')||'[]');
 
 function save(){
-  localStorage.setItem('study-tracker-data', JSON.stringify(topics));
+ localStorage.setItem('jee-study', JSON.stringify(study));
+ localStorage.setItem('jee-tests', JSON.stringify(tests));
 }
 
 function render(){
-  topicList.innerHTML = '';
-  topicCount.textContent = topics.length;
-  hourCount.textContent = topics.reduce((a,b)=>a + Number(b.hours),0);
+ document.getElementById('topicsCount').textContent = study.length;
+ document.getElementById('hoursCount').textContent = study.reduce((a,b)=>a+Number(b.hours),0);
+ document.getElementById('testCount').textContent = tests.length;
+ document.getElementById('avgScore').textContent = tests.length ? Math.round(tests.reduce((a,b)=>a+b,0)/tests.length)+'%' : '0%';
 
-  topics.forEach((topic,index)=>{
-    const div = document.createElement('div');
-    div.className = 'bg-white rounded-xl p-4 shadow flex justify-between items-center';
-    div.innerHTML = `
-      <div>
-        <div class="font-semibold">${topic.name}</div>
-        <div class="text-sm text-slate-500">${topic.hours} hrs</div>
-      </div>
-      <button class="text-red-500 font-semibold">Delete</button>
-    `;
-    div.querySelector('button').onclick = ()=>{
-      topics.splice(index,1);
-      save();
-      render();
-    };
-    topicList.appendChild(div);
-  });
+ document.getElementById('studyList').innerHTML = study.map((s,i)=>`
+ <div class='bg-slate-800 p-3 rounded-xl flex justify-between'>
+ <div>${s.subject}: ${s.topic} — ${s.hours}h</div>
+ <button onclick='removeStudy(${i})' class='text-red-400'>✕</button>
+ </div>`).join('');
+
+ document.getElementById('testList').innerHTML = tests.map((t,i)=>`
+ <div class='bg-slate-800 p-3 rounded-xl flex justify-between'>
+ <div>${t}%</div>
+ <button onclick='removeTest(${i})' class='text-red-400'>✕</button>
+ </div>`).join('');
+ save();
 }
 
-form.addEventListener('submit', (e)=>{
-  e.preventDefault();
-  const name = topicInput.value.trim();
-  const hours = hoursInput.value;
+studyForm.onsubmit=(e)=>{
+ e.preventDefault();
+ study.unshift({
+  topic:topic.value,
+  subject:subject.value,
+  hours:hours.value
+ });
+ studyForm.reset();
+ render();
+}
 
-  if(!name || !hours) return;
+testForm.onsubmit=(e)=>{
+ e.preventDefault();
+ tests.unshift(Number(score.value));
+ testForm.reset();
+ render();
+}
 
-  topics.unshift({name, hours});
-  save();
-  render();
+function removeStudy(i){study.splice(i,1);render();}
+function removeTest(i){tests.splice(i,1);render();}
+window.removeStudy=removeStudy;
+window.removeTest=removeTest;
 
-  topicInput.value = '';
-  hoursInput.value = '';
-});
-
+function countdown(){
+ const exam = new Date('2027-01-15');
+ const diff = exam - new Date();
+ const d = Math.floor(diff/(1000*60*60*24));
+ document.getElementById('countdown').textContent = d + ' days to JEE';
+}
+countdown();
 render();
-</script>
-</body>
-</html>
+</script></body>
+                                                                                       </html>
