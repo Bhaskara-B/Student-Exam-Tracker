@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Boss Duo - Offline Student Exam Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom non-Tailwind safety styling parameters */
+        .touch-target { min-width: 48px; min-height: 48px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen pb-12">
+
+    <nav class="bg-slate-900 text-white shadow-md border-b border-slate-800 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <span class="bg-emerald-500 text-slate-950 font-bold px-2.5 py-1 rounded text-sm tracking-wider uppercase">BOSS OS</span>
+                <h1 class="text-lg font-bold tracking-tight">Offline Exam Tracker</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="exportApplicationData()" class="touch-target flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    <span class="hidden sm:inline">Export Backup</span>
+                </button>
+                <label class="touch-target flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 cursor-pointer transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    <span class="hidden sm:inline">Import Data</span>
+                    <input type="file" id="importFileEngine" accept=".json" class="hidden" onchange="importApplicationData(event)">
+                </label>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 tracking-wider uppercase">Weighted Syllabus Progress</h3>
+                    <div class="flex items-baseline gap-2 mt-2">
+                        <span id="globalProgressMetric" class="text-3xl font-extrabold text-slate-900">0.0%</span>
+                        <span class="text-xs text-slate-500 font-medium">calculated tracking weight</span>
+                    </div>
+                </div>
+                <div class="w-full bg-slate-100 h-2.5 rounded-full mt-4 overflow-hidden">
+                    <div id="globalProgressBar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div id="countdownTelemetryWidget" class="bg-slate-900 text-white p-5 rounded-xl border border-slate-800 shadow-sm md:col-span-2 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-xs font-bold text-emerald-400 tracking-wider uppercase">Nearest Impending Exam Deadline</h3>
+                    <h2 id="countdownTargetTitle" class="text-lg font-bold mt-1 text-slate-100 truncate">No Pending Exam Tracked</h2>
+                </div>
+                <div class="grid grid-cols-4 gap-2 mt-3 text-center">
+                    <div class="bg-slate-800/60 p-2 rounded border border-slate-750"><span id="daysBox" class="block text-xl font-bold text-white">00</span><span class="text-[10px] uppercase tracking-wide text-slate-400">Days</span></div>
+                    <div class="bg-slate-800/60 p-2 rounded border border-slate-750"><span id="hoursBox" class="block text-xl font-bold text-white">00</span><span class="text-[10px] uppercase tracking-wide text-slate-400">Hours</span></div>
+                    <div class="bg-slate-800/60 p-2 rounded border border-slate-750"><span id="minsBox" class="block text-xl font-bold text-white">00</span><span class="text-[10px] uppercase tracking-wide text-slate-400">Mins</span></div>
+                    <div class="bg-slate-800/60 p-2 rounded border border-slate-750"><span id="secsBox" class="block text-xl font-bold text-emerald-400">00</span><span class="text-[10px] uppercase tracking-wide text-slate-400">Secs</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="lg:col-span-2 space-y-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.783 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                            <h2 class="font-bold text-slate-800">Hierarchical Syllabus Core</h2>
+                        </div>
+                        <button onclick="openModal('subjectModal')" class="touch-target bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                            <span>+ Add Subject</span>
+                        </button>
+                    </div>
+
+                    <div id="syllabusFallbackUI" class="hidden py-12 px-4 text-center">
+                        <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                        </div>
+                        <h3 class="text-sm font-bold text-slate-700">No Target Subjects Registered</h3>
+                        <p class="text-xs text-slate-400 max-w-xs mx-auto mt-1">Initialize your syllabus infrastructure tracking targets by registering a parent subject field container node.</p>
+                        <button onclick="openModal('subjectModal')" class="mt-4 inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition">
+                            Create First Subject Container
+                        </button>
+                    </div>
+
+                    <div id="syllabusRenderOutputTree" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <h2 class="font-bold text-slate-800">Target Milestones</h2>
+                        </div>
+                        <button onclick="openModal('examModal')" class="touch-target bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                            + Target
+                        </button>
+                    </div>
+                    <div id="examsRenderOutputTarget" class="space-y-2.5"></div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                        <div class="flex items-center gap-2">
+                            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2zm0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            <h2 class="font-bold text-slate-800">Performance Analytics Ledger</h2>
+                        </div>
+                        <button onclick="openModal('mockModal')" class="touch-target bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">
+                            + Record Entry
+                        </button>
+                    </div>
+
+                    <div id="mocksFallbackUI" class="hidden py-6 text-center">
+                        <p class="text-xs text-slate-400 max-w-[200px] mx-auto">No logged analytics sessions found. Register mock performance scorecards to spin up the mistake tracking engine logs.</p>
+                    </div>
+
+                    <div id="mocksRenderOutputTarget" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="subjectModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full border border-slate-200 overflow-hidden transform transition-all">
+            <div class="bg-slate-900 px-4 py-3 text-white flex items-center justify-between">
+                <h3 class="font-bold text-sm tracking-wide uppercase">Register Subject Target Workspace</h3>
+                <button onclick="closeModal('subjectModal')" class="touch-target text-slate-400 hover:text-white font-bold">&times;</button>
+            </div>
+            <form id="subjectForm" onsubmit="createNewSubject(event)" class="p-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1 tracking-wider">Subject Identifier Title</label>
+                    <input type="text" id="subj_name" required placeholder="e.g., Quantum Mechanics, Organic Chemistry" class="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1 tracking-wider">Strategic Priority Weight Allocation (1-10)</label>
+                    <input type="number" id="subj_weight" min="1" max="10" value="5" required class="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full touch-target bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-lg transition shadow-sm">Save Subject Context Node</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="chapterModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full border border-slate-200 overflow-hidden">
+            <div class="bg-slate-900 px-4 py-3 text-white flex items-center justify-between">
+                <h3 class="font-bold text-sm tracking-wide uppercase">Append Structural Chapter Target</h3>
+                <button onclick="closeModal('chapterModal')" class="touch-target text-slate-400 hover:text-white font-bold">&times;</button>
+            </div>
+            <form id="chapterForm" onsubmit="createNewChapter(event)" class="p-4 space-y-4">
+                <input type="hidden" id="chap_parent_subj_id">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1 tracking-wider">Chapter System Title</label>
+                    <input type="text" id="chap_title" required placeholder="e.g., Thermodynamics Module A, Electrostatics" class="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full touch-target bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-lg transition shadow-sm">Inject Chapter Module</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="topicModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full border border-slate-200 overflow-hidden">
+            <div class="bg-slate-900 px-4 py-3 text-white flex items-center justify-between">
+                <h3 class="font-bold text-sm tracking-wide uppercase">Inject Operational Topic Node</h3>
+                <button onclick="closeModal('topicModal')" class="touch-target text-slate-400 hover:text-white font-bold">&times;</button>
+            </div>
+            <form id="topicForm" onsubmit="createNewTopic(event)" class="p-4 space-y-4">
+                <input type="hidden" id="topic_parent_subj_id">
+                <input type="hidden" id="topic_parent_chap_id">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1 tracking-wider">Topic / Dynamic Action Task String</label>
+                    <input type="text" id="topic_title" required placeholder="e.g., Carnot Engine Efficiency Calculation Proof" class="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full touch-target bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-lg transition shadow-sm">Append Tracking Target Node</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="examModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full border border-slate-200 overflow-hidden">
+            <div class="bg-slate-900 px-4 py-3 text-white flex items-center justify-between">
+                <h3 class="font-bold text-sm tracking-wide uppercase">Log Impending External Milestone Target</h3>
+                <button onclick="closeModal('examModal')" class="touch-target text-slate-400 hover:text-white font-bold">&times;</button>
+            </div>
+            <form id="examForm" onsubmit="createNewExamMilestone(event)" class="p-4 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1 tracking-wider">Milestone Context Label</label>
+                    <input type="text" id="exam_title" required placeholder="e.g., MCAT Entry Test, Calculus Finals" class="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1 tracking-wider">Target Absolute Boundary Target Date & Time</label>
+                    <input type="datetime-local" id="exam_date" required class="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full touch-target bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs uppercase tracking-wider rounded-lg transition shadow-sm">Register Schedule Target</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="mockModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full border border-slate-200 overflow-hidden">
+            <div class="bg-slate-900 px-4 py-3 text-white flex items-center justify-between">
+                <h3 class="font-bold text-sm tracking-wide uppercase">Commit Analytics Scorecard Entry Record</h3>
+                <button onclick="closeModal('mockModal')" class="touch-target text-slate-400 hover:text-white font-bold">&times;</button>
+            </div>
+            <form id="mockForm" onsubmit="createNewMockPerformanceRecord(event)" class="p-4 space-y-3">
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="col-span-2">
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1 tracking-wider">Evaluation Set Code Name</label>
+                        <input type="text" id="mock_title" required placeholder="e.g., AAMC Full Length Practice Session 3" class="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1 tracking-wider">Net Marks Realized</label>
+                        <input type="number" id="mock_score" step="0.01" min="0" required placeholder="e.g., 84.5" class="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1 tracking-wider">Max Possible Cap Bounds</label>
+                        <input type="number" id="mock_total" step="0.01" min="0" required placeholder="100" class="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1 tracking-wider">Strategic Post-Mortem Error Journal & Concept Review</label>
+                    <textarea id="mock_mistakes" rows="3" required placeholder="Isolate precisely why variables failed. Write structural logic errors or missing facts down here for local parsing and continuous flash validation routines..." class="w-full border border-slate-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+             
